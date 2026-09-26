@@ -28,7 +28,7 @@ def run(args: argparse.Namespace) -> int:
         report["search"] = {"candidates": [str(p) for p in candidates]}
         report["note"] = (
             "Nsight Graphics install not detected. Set "
-            f"{locate.ENV_VAR}=<path to host\\windows-desktop-nomad-x64> "
+            f"{locate.ENV_VAR}=<install>/{locate.HOST_SUBDIR.as_posix()} "
             "or install Nsight Graphics 2026.1+."
         )
         return emit(report, args.out)

@@ -12,7 +12,7 @@ from nsight.runner import invoke, replay
 
 def run(args: argparse.Namespace) -> int:
     host = locate.find_install()
-    replay_exe = locate.binary(host, "ngfx-replay.exe")
+    replay_exe = locate.binary(host, "ngfx-replay")
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     rc, _, stderr = invoke.run_capture(

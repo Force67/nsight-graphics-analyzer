@@ -14,6 +14,7 @@ from __future__ import annotations
 import sys
 from typing import Optional, Sequence
 
+from nsight.env import locate
 from nsight.runner import common
 
 ACTIVITY = "GPU Trace Profiler"
@@ -159,7 +160,7 @@ def build_argv(
     trace_timeout: Optional[int] = None,
     # General
     no_timeout: bool = True,
-    platform_name: str = "Windows",
+    platform_name: str = locate.NGFX_PLATFORM,
     verbose: bool = False,
 ) -> list[str]:
     """Construct the full ngfx GPU Trace Profiler argv.

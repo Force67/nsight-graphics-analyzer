@@ -125,14 +125,14 @@ def _auto_export(replay_exe: str, capture: Path) -> None:
 def run(args: argparse.Namespace) -> int:
     _warn_unexpected_ext(args.out)
     host = locate.find_install()
-    ngfx_exe = locate.binary(host, "ngfx.exe", strict=False)
+    ngfx_exe = locate.binary(host, "ngfx", strict=False)
     if not ngfx_exe:
-        ngfx_exe = locate.binary(host, "ngfx-capture.exe")  # exits 3 if missing
+        ngfx_exe = locate.binary(host, "ngfx-capture")  # exits 3 if missing
 
     if args.dry_run:
         session_dir = Path(args.out).parent / "<timestamp>"
         try:
-            if Path(ngfx_exe).name.lower() == "ngfx.exe":
+            if Path(ngfx_exe).stem.lower() == "ngfx":
                 argv = graphics.build_unified_argv(
                     ngfx_exe,
                     exe=args.exe,
@@ -180,7 +180,7 @@ def run(args: argparse.Namespace) -> int:
     sys.stderr.write(f"[nsight] session dir: {session_dir}\n")
 
     try:
-        if Path(ngfx_exe).name.lower() == "ngfx.exe":
+        if Path(ngfx_exe).stem.lower() == "ngfx":
             argv = graphics.build_unified_argv(
                 ngfx_exe,
                 exe=args.exe,
@@ -256,11 +256,11 @@ def run(args: argparse.Namespace) -> int:
 
     sys.stderr.write(f"[nsight] captured {captured}\n")
     if args.auto_export:
-        replay_exe = locate.binary(host, "ngfx-replay.exe", strict=False)
+        replay_exe = locate.binary(host, "ngfx-replay", strict=False)
         if replay_exe:
             _auto_export(replay_exe, captured)
         else:
             sys.stderr.write(
-                "[nsight] auto-export skipped: ngfx-replay.exe not present.\n"
+                "[nsight] auto-export skipped: ngfx-replay not present.\n"
             )
     return EXIT_OK

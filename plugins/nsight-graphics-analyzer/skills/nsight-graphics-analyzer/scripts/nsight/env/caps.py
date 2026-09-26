@@ -158,14 +158,15 @@ def _build(host: Path) -> dict:
         binaries[name] = {"present": (host / name).exists()}
 
     def flags_of(name: str, help_arg: str = "--help") -> list[str]:
+        name += locate.EXE_SUFFIX
         if not binaries[name]["present"]:
             return []
         return _list_flags(_help_text(host / name, help_arg))
 
     flag_lookup = {
-        "ngfx":         set(flags_of("ngfx.exe", "--help-all")),
-        "ngfx-capture": set(flags_of("ngfx-capture.exe")),
-        "ngfx-replay":  set(flags_of("ngfx-replay.exe")),
+        "ngfx":         set(flags_of("ngfx", "--help-all")),
+        "ngfx-capture": set(flags_of("ngfx-capture")),
+        "ngfx-replay":  set(flags_of("ngfx-replay")),
     }
 
     wrapper_features: dict[str, bool] = {}

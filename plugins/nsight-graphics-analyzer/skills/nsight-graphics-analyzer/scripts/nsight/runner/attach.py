@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from typing import Optional, Sequence
 
+from nsight.env import locate
 from nsight.runner import common
 
 
@@ -22,7 +23,7 @@ def build_launch_argv(
     output_dir: Optional[str] = None,
     project: Optional[str] = None,
     hostname: Optional[str] = None,
-    platform_name: str = "Windows",
+    platform_name: str = locate.NGFX_PLATFORM,
     verbose: bool = False,
     no_timeout: bool = True,
 ) -> list[str]:
@@ -50,7 +51,7 @@ def build_attach_argv(
     output_dir: Optional[str] = None,
     project: Optional[str] = None,
     hostname: Optional[str] = None,
-    platform_name: str = "Windows",
+    platform_name: str = locate.NGFX_PLATFORM,
     verbose: bool = False,
     no_timeout: bool = True,
 ) -> list[str]:

@@ -1,17 +1,71 @@
-"""Process management: admin detection, taskkill /T /F process trees,
-residual-ngfx detection so wrappers can warn before launching duplicates."""
+"""Process management: admin detection, process-tree kills (taskkill on
+Windows, /proc + SIGKILL on Linux), residual-ngfx detection so wrappers can
+warn before launching duplicates."""
 from __future__ import annotations
 
 import ctypes
+import os
+import signal
 import subprocess
 import sys
+from pathlib import Path
 from typing import Optional
 
 
-def is_admin() -> Optional[bool]:
-    """Return True/False on Windows, None on other platforms."""
-    if sys.platform != "win32":
+def _proc_pids() -> list[int]:
+    return [int(d.name) for d in Path("/proc").iterdir() if d.name.isdigit()]
+
+
+def _proc_name(pid: int) -> Optional[str]:
+    """Executable basename; /proc/<pid>/comm truncates at 15 chars, so read
+    argv[0] instead."""
+    try:
+        raw = Path(f"/proc/{pid}/cmdline").read_bytes()
+    except OSError:
         return None
+    argv0 = raw.split(b"\0", 1)[0].decode(errors="replace")
+    return os.path.basename(argv0) if argv0 else None
+
+
+def _proc_start_epoch(pid: int) -> Optional[float]:
+    try:
+        stat = Path(f"/proc/{pid}/stat").read_text()
+        btime = next(
+            int(line.split()[1])
+            for line in Path("/proc/stat").read_text().splitlines()
+            if line.startswith("btime ")
+        )
+    except (OSError, StopIteration, ValueError):
+        return None
+    # Field 22 (starttime); split after the ')' because comm may contain spaces.
+    fields = stat.rsplit(")", 1)[1].split()
+    return btime + int(fields[19]) / os.sysconf("SC_CLK_TCK")
+
+
+def _proc_descendants(pid: int) -> list[int]:
+    out: list[int] = []
+    stack = [pid]
+    while stack:
+        cur = stack.pop()
+        try:
+            tasks = list(Path(f"/proc/{cur}/task").iterdir())
+        except OSError:
+            continue
+        for task in tasks:
+            try:
+                children = (task / "children").read_text().split()
+            except OSError:
+                continue
+            for child in map(int, children):
+                out.append(child)
+                stack.append(child)
+    return out
+
+
+def is_admin() -> Optional[bool]:
+    """Return True/False: Windows elevation, or euid 0 elsewhere."""
+    if sys.platform != "win32":
+        return os.geteuid() == 0
     try:
         return bool(ctypes.windll.shell32.IsUserAnAdmin())
     except Exception:
@@ -19,13 +73,23 @@ def is_admin() -> Optional[bool]:
 
 
 def kill_process_tree(pid: int, *, force: bool = True) -> tuple[int, str, str]:
-    """Kill the process and all descendants on Windows.
+    """Kill the process and all descendants.
 
-    Returns (returncode, stdout, stderr) from taskkill. On non-Windows the
-    function is a no-op that returns (0, '', '').
+    Returns (returncode, stdout, stderr) from taskkill on Windows. Elsewhere
+    sends SIGKILL (SIGTERM if not `force`) to the tree, children first;
+    returncode is 1 if any signal failed.
     """
     if sys.platform != "win32":
-        return 0, "", ""
+        sig = signal.SIGKILL if force else signal.SIGTERM
+        errors: list[str] = []
+        for target in reversed([pid, *_proc_descendants(pid)]):
+            try:
+                os.kill(target, sig)
+            except ProcessLookupError:
+                pass
+            except OSError as exc:
+                errors.append(f"{target}: {exc}")
+        return (1 if errors else 0), "", "\n".join(errors)
     args = ["taskkill", "/T"]
     if force:
         args.append("/F")
@@ -38,9 +102,14 @@ def kill_process_tree(pid: int, *, force: bool = True) -> tuple[int, str, str]:
 
 
 def list_residual_ngfx() -> list[dict]:
-    """List currently-running ngfx*.exe processes via tasklist (Windows only)."""
+    """List currently-running ngfx* processes."""
     if sys.platform != "win32":
-        return []
+        out = []
+        for pid in _proc_pids():
+            name = _proc_name(pid)
+            if name and name.lower().startswith("ngfx"):
+                out.append({"name": name, "pid": pid})
+        return out
     try:
         proc = subprocess.run(
             ["tasklist", "/FO", "CSV", "/NH"],
@@ -69,7 +138,7 @@ def list_residual_ngfx() -> list[dict]:
 
 
 def kill_all_ngfx() -> list[dict]:
-    """Kill every ngfx*.exe process tree we can find."""
+    """Kill every ngfx* process tree we can find."""
     out: list[dict] = []
     for proc in list_residual_ngfx():
         rc, stdout, stderr = kill_process_tree(proc["pid"])
@@ -94,7 +163,7 @@ def kill_target_started_after(
     game ngfx launched on our behalf.
 
     Returns a list of `{pid, name, returncode, stdout, stderr}` for each
-    killed process. On non-Windows or if no matches, returns `[]`. We
+    killed process. If no matches, returns `[]`. We
     deliberately use exe basename + start time (not PID) so concurrent
     independent runs of the same game are NOT touched.
 
@@ -106,7 +175,18 @@ def kill_target_started_after(
     8-hour offset on UTC+8 hosts).
     """
     if sys.platform != "win32":
-        return []
+        cutoff = since_epoch - grace_seconds
+        out = []
+        for pid in _proc_pids():
+            if _proc_name(pid) != exe_basename:
+                continue
+            started = _proc_start_epoch(pid)
+            if started is None or started < cutoff:
+                continue
+            rc, stdout, stderr = kill_process_tree(pid)
+            out.append({"pid": pid, "name": exe_basename, "returncode": rc,
+                        "stdout": stdout, "stderr": stderr.strip()})
+        return out
     cutoff_epoch = int(since_epoch - grace_seconds)
     name_pattern = exe_basename.replace("'", "''")
     ps = (

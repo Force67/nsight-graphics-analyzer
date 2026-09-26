@@ -19,7 +19,7 @@ _NGFX_CAPTURE_ENV = {
 
 def run(args: argparse.Namespace) -> int:
     host = locate.find_install()
-    ngfx_exe = locate.binary(host, "ngfx.exe")
+    ngfx_exe = locate.binary(host, "ngfx")
     if args.dry_run:
         session_dir = Path(args.out).parent / "<timestamp>"
         try:

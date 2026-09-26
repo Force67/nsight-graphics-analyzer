@@ -32,7 +32,7 @@ def _run_text_export(replay_exe: str, capture: str, flag: str, out_path: Path,
 
 def run(args: argparse.Namespace) -> int:
     host = locate.find_install()
-    replay_exe = locate.binary(host, "ngfx-replay.exe")
+    replay_exe = locate.binary(host, "ngfx-replay")
     capture = str(Path(args.capture).resolve())
     out_dir = Path(args.output_dir).resolve()
     out_dir.mkdir(parents=True, exist_ok=True)

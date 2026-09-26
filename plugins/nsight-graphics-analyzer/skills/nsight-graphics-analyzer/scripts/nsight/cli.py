@@ -45,7 +45,7 @@ def _add_kill(sub) -> None:
     )
     grp = p.add_mutually_exclusive_group(required=True)
     grp.add_argument("--pid", type=nonnegative_int, help="Kill this PID and its descendants.")
-    grp.add_argument("--all", action="store_true", help="Kill every running ngfx*.exe.")
+    grp.add_argument("--all", action="store_true", help="Kill every running ngfx* process.")
     p.add_argument("--out", help="Write JSON result to file instead of stdout.")
     p.set_defaults(handler="kill")
 

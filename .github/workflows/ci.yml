@@ -8,11 +8,12 @@ on:
 
 jobs:
   smoke:
-    name: Smoke tests (Windows / Python ${{ matrix.python }})
-    runs-on: windows-latest
+    name: Smoke tests (${{ matrix.os }} / Python ${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
+        os: [windows-latest, ubuntu-latest]
         python: ["3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4

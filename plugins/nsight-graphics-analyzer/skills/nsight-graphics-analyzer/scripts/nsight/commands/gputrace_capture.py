@@ -160,7 +160,7 @@ def _gate_features(args: argparse.Namespace) -> None:
 
 def _build_skill_argv(args: argparse.Namespace, session_dir: Path) -> list[str]:
     host = locate.find_install()
-    ngfx_exe = locate.binary(host, "ngfx.exe")
+    ngfx_exe = locate.binary(host, "ngfx")
     return gpu_trace.build_argv(
         ngfx_exe,
         exe=args.exe,

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from typing import Optional, Sequence
 
+from nsight.env import locate
 from nsight.runner import common
 
 ACTIVITY = "Generate C++ Capture"
@@ -28,7 +29,7 @@ def build_argv(
     wait_seconds: Optional[int] = None,
     wait_hotkey: bool = False,
     enable_vksc: bool = False,
-    platform_name: str = "Windows",
+    platform_name: str = locate.NGFX_PLATFORM,
     verbose: bool = False,
     no_timeout: bool = True,
 ) -> list[str]:

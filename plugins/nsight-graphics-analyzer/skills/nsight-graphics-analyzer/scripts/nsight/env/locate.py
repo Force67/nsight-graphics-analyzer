@@ -1,12 +1,13 @@
 """Locate the NVIDIA Nsight Graphics installation directory and binaries.
 
 Discovery priority:
-    1. NSIGHT_GRAPHICS_DIR env var (must point at host\\windows-desktop-nomad-x64)
-    2. Filesystem glob across all fixed Windows drives (Program Files variants)
+    1. NSIGHT_GRAPHICS_DIR env var (must point at the host/<platform> dir)
+    2. Windows: glob across all fixed drives (Program Files variants)
+       Linux: glob under /opt/nvidia and ~/nvidia, plus `ngfx` on PATH
     3. Windows uninstall registry (catches non-standard install locations)
 
 Within each source the candidates are version-sorted (newest first) and the
-first that contains `ngfx-capture.exe` (the install marker) wins.
+first that contains `ngfx-capture` (the install marker) wins.
 """
 from __future__ import annotations
 
@@ -14,21 +15,26 @@ import ctypes
 import glob
 import os
 import re
+import shutil
 import sys
 from pathlib import Path
 from typing import Optional
 
 ENV_VAR = "NSIGHT_GRAPHICS_DIR"
 
-KNOWN_BINARIES = (
-    "ngfx.exe",
-    "ngfx-capture.exe",
-    "ngfx-replay.exe",
-    "ngfx-ui.exe",
-    "ngfx-rpc.exe",
+IS_WINDOWS = sys.platform == "win32"
+EXE_SUFFIX = ".exe" if IS_WINDOWS else ""
+# Value ngfx expects for --platform.
+NGFX_PLATFORM = "Windows" if IS_WINDOWS else "Linux (x86_64)"
+
+KNOWN_BINARIES = tuple(
+    name + EXE_SUFFIX
+    for name in ("ngfx", "ngfx-capture", "ngfx-replay", "ngfx-ui", "ngfx-rpc")
 )
-INSTALL_MARKER = "ngfx-capture.exe"
-HOST_SUBDIR = Path("host") / "windows-desktop-nomad-x64"
+INSTALL_MARKER = "ngfx-capture" + EXE_SUFFIX
+HOST_SUBDIR = Path("host") / (
+    "windows-desktop-nomad-x64" if IS_WINDOWS else "linux-desktop-nomad-x64"
+)
 
 
 def parse_version(host_dir: Path) -> tuple[int, ...]:
@@ -74,8 +80,26 @@ def _fixed_windows_drives() -> list[str]:
     return drives or ["C:"]
 
 
+def _linux_patterns() -> list[str]:
+    host = HOST_SUBDIR.as_posix()
+    return [
+        f"/opt/nvidia/nsight-graphics-for-linux/*/{host}",
+        f"/opt/nvidia/nsight-graphics*/{host}",
+        f"{Path.home()}/nvidia/nsight-graphics-for-linux/*/{host}",
+    ]
+
+
+def _path_candidates() -> list[Path]:
+    """`ngfx` on PATH, if it resolves into a host dir (symlink installs)."""
+    found = shutil.which("ngfx")
+    if not found:
+        return []
+    host = Path(found).resolve().parent
+    return [host] if (host / INSTALL_MARKER).exists() else []
+
+
 def _glob_candidates() -> tuple[list[Path], list[str]]:
-    patterns: list[str] = []
+    patterns: list[str] = [] if IS_WINDOWS else _linux_patterns()
     for drive in _fixed_windows_drives():
         for pf in ("Program Files", "Program Files (x86)"):
             patterns.append(
@@ -136,11 +160,11 @@ def _registry_candidates() -> list[Path]:
 def all_candidates() -> tuple[list[Path], list[str]]:
     """All filesystem + registry candidates, version-sorted (newest first), deduped."""
     fs_matches, patterns = _glob_candidates()
-    candidates = list(fs_matches) + _registry_candidates()
+    candidates = list(fs_matches) + _registry_candidates() + _path_candidates()
     seen: set[str] = set()
     ordered: list[Path] = []
     for cand in sorted(candidates, key=parse_version, reverse=True):
-        key = str(cand).lower()
+        key = str(cand).lower() if IS_WINDOWS else str(cand)
         if key in seen:
             continue
         seen.add(key)
@@ -175,16 +199,18 @@ def find_install(strict: bool = True) -> Optional[Path]:
         for pat in patterns:
             sys.stderr.write(f"  {pat}\n")
         sys.stderr.write(
-            "Plus Windows uninstall registry. None contained "
-            f"{INSTALL_MARKER}.\nOverride with env "
-            f"{ENV_VAR}=<path to host\\windows-desktop-nomad-x64>\n"
+            f"Plus {'Windows uninstall registry' if IS_WINDOWS else 'ngfx on PATH'}. "
+            f"None contained {INSTALL_MARKER}.\nOverride with env "
+            f"{ENV_VAR}=<install>/{HOST_SUBDIR.as_posix()}\n"
         )
         sys.exit(3)
     return None
 
 
 def binary(host: Path, name: str, strict: bool = True) -> Optional[str]:
-    """Resolve a Nsight binary path; exit 3 if missing in strict mode."""
+    """Resolve a Nsight binary path by base name (e.g. 'ngfx'); exit 3 if
+    missing in strict mode."""
+    name += EXE_SUFFIX
     path = host / name
     if path.exists():
         return str(path)

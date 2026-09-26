@@ -8,8 +8,8 @@ description: >
   frame capture, frame trace, gpu profiling, GPU performance, or asks why a
   frame is slow on the GPU. Captures frames from a target game (Graphics
   Capture or GPU Trace), auto-exports the GPU Trace TSV bundle, and exposes
-  small JSON queries the agent can read cheaply. Wraps `ngfx.exe`,
-  `ngfx-capture.exe`, `ngfx-replay.exe`.
+  small JSON queries the agent can read cheaply. Wraps `ngfx`,
+  `ngfx-capture`, `ngfx-replay`.
 metadata:
   version: 0.1.0
   short-description: Capture and analyze Nsight GPU traces.
@@ -19,7 +19,7 @@ metadata:
     phrases: nsight, ngfx, GPU trace, frame capture, frame trace,
     GPU performance analysis, GPU performance.
   requires:
-    - Windows 10/11
+    - Windows 10/11 or Linux x86_64
     - NVIDIA Nsight Graphics 2026.1 or newer
     - Python 3.10+
   categories:
@@ -82,6 +82,10 @@ any subcommand's full flag list run `python scripts/nsight.py <cmd> --help`.
   code 4. Try `cpp-capture` or disable the anti-cheat per game policy.
 - If a capture fails with a permission error, re-run from an elevated
   PowerShell. `doctor` reports `is_admin`.
+- Linux: GPU Trace needs access to GPU performance counters
+  (`ERR_NVGPUCTRPERM`). Either run as root or load the driver with
+  `NVreg_RestrictProfilingToAdminUsers=0`. `trigger-hotkey` is Windows-only;
+  use `--start-after-frames` / `--start-after-ms` instead.
 
 ## Tool layout
 
@@ -390,8 +394,8 @@ python scripts/nsight.py trigger-hotkey --process game
   raw draw calls). Use RenderDoc/PIX for per-API timing.
 - **HTML/PDF report generation** — agent writes Markdown directly.
 - **Capture diff** (compare two runs) — future work.
-- **Cross-platform** — Windows only.
+- **macOS** — Nsight Graphics does not support it.
 - **Auto-installing Nsight** — `doctor` only detects.
-- **Remote capture (ngfx-rpc)** — use `ngfx-rpc.exe` manually if needed.
+- **Remote capture (ngfx-rpc)** — use `ngfx-rpc` manually if needed.
 - **NVTX marker injection** — game-side, not skill-side.
-- **GUI launching** — open `ngfx-ui.exe` manually for visual inspection.
+- **GUI launching** — open `ngfx-ui` manually for visual inspection.

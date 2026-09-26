@@ -12,7 +12,7 @@ from nsight.runner import invoke
 
 def run(args: argparse.Namespace) -> int:
     host = locate.find_install()
-    ngfx_exe = locate.binary(host, "ngfx.exe")
+    ngfx_exe = locate.binary(host, "ngfx")
     try:
         argv = attach_runner.build_attach_argv(
             ngfx_exe,

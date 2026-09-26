@@ -21,7 +21,7 @@ def run(args: argparse.Namespace) -> int:
     caps.require_feature("replay_perf_report", "--perf-report-dir")
 
     host = locate.find_install()
-    replay_exe = locate.binary(host, "ngfx-replay.exe")
+    replay_exe = locate.binary(host, "ngfx-replay")
 
     with tempfile.TemporaryDirectory(prefix="nsight-replay-perf-") as tmp:
         tmp_dir = Path(tmp)

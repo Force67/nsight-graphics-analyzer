@@ -232,7 +232,11 @@ def _send_key(vk: int, scan: int, *, use_scancode: bool = False) -> tuple[bool, 
 
 def run(args: argparse.Namespace) -> int:
     if sys.platform != "win32":
-        sys.stderr.write("[nsight] trigger-hotkey is Windows-only\n")
+        sys.stderr.write(
+            "[nsight] trigger-hotkey is Windows-only. On Linux use "
+            "gputrace-capture --start-after-frames / --start-after-ms, or "
+            "press the hotkey in the target window yourself.\n"
+        )
         return EXIT_TOOL
 
     key = (args.key or "F11").upper()

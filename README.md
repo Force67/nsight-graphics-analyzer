@@ -2,7 +2,7 @@
 
 **English** | [简体中文](./README.zh-CN.md)
 
-Nsight Graphics Analyzer is a Windows-only skill and CLI wrapper for **NVIDIA
+Nsight Graphics Analyzer is a Windows and Linux skill and CLI wrapper for **NVIDIA
 Nsight Graphics 2026.1+**. It helps Claude Code, Codex, or a human at the
 terminal capture GPU frames, export Nsight GPU Trace data, and inspect the
 result through small JSON files instead of multi-hundred-MB TSV artifacts.
@@ -12,16 +12,25 @@ The Python code uses only the standard library. No `pip install` is required.
 [![ci](https://github.com/FrostyLeaves/nsight-graphics-analyzer/actions/workflows/ci.yml/badge.svg)](https://github.com/FrostyLeaves/nsight-graphics-analyzer/actions/workflows/ci.yml)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![python](https://img.shields.io/badge/python-3.10%2B-blue)
-![platform](https://img.shields.io/badge/platform-Windows%2010%2F11-lightgrey)
+![platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-lightgrey)
 
 ## Requirements
 
 | Requirement | Notes |
 |---|---|
-| Windows 10/11 | Required. The wrapper uses Windows process and path APIs. |
+| Windows 10/11 or Linux x86_64 | Examples below use PowerShell; see [Linux](#linux) for differences. |
 | NVIDIA Nsight Graphics 2026.1+ | Install separately from [NVIDIA Developer](https://developer.nvidia.com/nsight-graphics). |
 | Python 3.10+ | Standard library only. |
 | NVIDIA GPU and supported driver | Required for Nsight capture and replay workflows. |
+
+### Linux
+
+- Install location is auto-detected under `/opt/nvidia/nsight-graphics-for-linux/*/host/linux-desktop-nomad-x64`,
+  `~/nvidia/...`, or via `ngfx` on `PATH`. Otherwise set `NSIGHT_GRAPHICS_DIR` to that `host/linux-desktop-nomad-x64` dir.
+- GPU Trace needs GPU performance counter access (`ERR_NVGPUCTRPERM`): run as root or set the
+  `NVreg_RestrictProfilingToAdminUsers=0` nvidia module option.
+- `trigger-hotkey` is Windows-only. Use `--start-after-frames` / `--start-after-ms`.
+- Process cleanup reads `/proc`; no extra dependencies.
 
 Run the environment check first:
 
@@ -240,7 +249,7 @@ tests/                    Unit tests and small TSV fixtures
 
 Before opening a PR:
 
-1. Run `python -m unittest discover -s tests -v` on Windows.
+1. Run `python -m unittest discover -s tests -v` on Windows or Linux.
 2. Keep the three JSON schemas stable; bump `SCHEMA_VERSION` for breaking changes.
 3. Read [DESIGN.md](DESIGN.md) before adding a subcommand or analysis facet.
 4. Do not add third-party Python dependencies.

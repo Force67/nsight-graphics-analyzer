@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from typing import Optional, Sequence
 
+from nsight.env import locate
 from nsight.runner import common
 
 ACTIVITY = "Graphics Capture"
@@ -35,7 +36,7 @@ def build_unified_argv(
     frame_count: int = 1,
     hud_position: Optional[str] = None,
     non_portable: bool = False,
-    platform_name: str = "Windows",
+    platform_name: str = locate.NGFX_PLATFORM,
     verbose: bool = False,
     no_timeout: bool = True,
 ) -> list[str]:
