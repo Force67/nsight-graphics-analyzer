@@ -32,3 +32,4 @@ desktop.ini
 # Build/dist (none expected, but defensive)
 build/
 dist/
+result

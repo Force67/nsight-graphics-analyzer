@@ -25,12 +25,30 @@ The Python code uses only the standard library. No `pip install` is required.
 
 ### Linux
 
-- Install location is auto-detected under `/opt/nvidia/nsight-graphics-for-linux/*/host/linux-desktop-nomad-x64`,
-  `~/nvidia/...`, or via `ngfx` on `PATH`. Otherwise set `NSIGHT_GRAPHICS_DIR` to that `host/linux-desktop-nomad-x64` dir.
+- Install location is auto-detected under `~/nvidia/NVIDIA-Nsight-Graphics-*` (.run default), `/usr/local/...`,
+  `/opt/nvidia/nsight-graphics-for-linux/*` (.deb), or via `ngfx` on `PATH`. Otherwise set `NSIGHT_GRAPHICS_DIR` to that `host/linux-desktop-nomad-x64` dir.
 - GPU Trace needs GPU performance counter access (`ERR_NVGPUCTRPERM`): run as root or set the
   `NVreg_RestrictProfilingToAdminUsers=0` nvidia module option.
 - `trigger-hotkey` is Windows-only. Use `--start-after-frames` / `--start-after-ms`.
 - Process cleanup reads `/proc`; no extra dependencies.
+
+### NixOS
+
+`flake.nix` packages Nsight Graphics 2026.1 (fetched from NVIDIA, unfree) in an FHS env together with
+this CLI:
+
+```sh
+nix run .# -- doctor                 # nsight-analyzer
+nix shell .#                         # ngfx, ngfx-ui, ngfx-capture, ngfx-replay, nsight-analyzer
+```
+
+- Pinned to 2026.1 because 2026.3 needs driver 615+.
+- The wrapper puts libX11/libXi/libXfixes/xcb-keysyms and `/run/opengl-driver/lib` on `LD_LIBRARY_PATH`.
+  Nsight's hooks in the target `dlopen` those by soname, which a Nix-built app's RUNPATH does not cover;
+  without them the target segfaults in Nsight's `XOpenDisplay` hook.
+- Linux ngfx ignores `--output-dir` for Graphics Capture; `capture` picks the file up from
+  `~/Documents/NVIDIA Nsight Graphics/GraphicsCaptures` instead.
+- For GPU Trace: `boot.extraModprobeConfig = "options nvidia NVreg_RestrictProfilingToAdminUsers=0";`
 
 Run the environment check first:
 
