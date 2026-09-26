@@ -3,7 +3,7 @@
 Discovery priority:
     1. NSIGHT_GRAPHICS_DIR env var (must point at the host/<platform> dir)
     2. Windows: glob across all fixed drives (Program Files variants)
-       Linux: glob under /opt/nvidia and ~/nvidia, plus `ngfx` on PATH
+       Linux: glob ~/nvidia, /usr/local, /opt/nvidia, plus `ngfx` on PATH
     3. Windows uninstall registry (catches non-standard install locations)
 
 Within each source the candidates are version-sorted (newest first) and the
@@ -81,11 +81,13 @@ def _fixed_windows_drives() -> list[str]:
 
 
 def _linux_patterns() -> list[str]:
+    # .run installer: <targetpath>/NVIDIA-Nsight-Graphics-<ver>, targetpath
+    # defaulting to ~/nvidia (or /usr/local without a home). .deb: /opt/nvidia.
     host = HOST_SUBDIR.as_posix()
     return [
+        f"{Path.home()}/nvidia/NVIDIA-Nsight-Graphics-*/{host}",
+        f"/usr/local/NVIDIA-Nsight-Graphics-*/{host}",
         f"/opt/nvidia/nsight-graphics-for-linux/*/{host}",
-        f"/opt/nvidia/nsight-graphics*/{host}",
-        f"{Path.home()}/nvidia/nsight-graphics-for-linux/*/{host}",
     ]
 
 

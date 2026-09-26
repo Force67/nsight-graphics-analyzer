@@ -207,7 +207,7 @@ def build_argv(
             "specify a launch target via --exe / --attach-pid / --project"
         )
 
-    argv: list[str] = [ngfx_exe, f"--activity={ACTIVITY}", "--platform", platform_name]
+    argv: list[str] = [ngfx_exe, f"--activity={ACTIVITY}", f"--platform={platform_name}"]
     common.append_optional(argv, "--hostname",   hostname)
     common.append_optional(argv, "--project",    project)
     common.append_optional(argv, "--output-dir", output_dir)

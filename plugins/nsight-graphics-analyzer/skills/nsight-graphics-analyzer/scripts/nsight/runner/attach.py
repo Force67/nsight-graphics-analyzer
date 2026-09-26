@@ -28,7 +28,7 @@ def build_launch_argv(
     no_timeout: bool = True,
 ) -> list[str]:
     argv: list[str] = [
-        ngfx_exe, f"--activity={activity}", "--platform", platform_name,
+        ngfx_exe, f"--activity={activity}", f"--platform={platform_name}",
         "--launch-detached",
     ]
     common.append_optional(argv, "--hostname",   hostname)
@@ -56,7 +56,7 @@ def build_attach_argv(
     no_timeout: bool = True,
 ) -> list[str]:
     argv: list[str] = [
-        ngfx_exe, f"--activity={activity}", "--platform", platform_name,
+        ngfx_exe, f"--activity={activity}", f"--platform={platform_name}",
         "--attach-pid", str(pid),
     ]
     common.append_optional(argv, "--hostname",   hostname)

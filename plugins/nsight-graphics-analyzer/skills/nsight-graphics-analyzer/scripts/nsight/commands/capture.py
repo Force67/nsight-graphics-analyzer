@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import subprocess
 import sys
 import time
@@ -24,6 +25,9 @@ _NGFX_CAPTURE_ENV = {
 }
 
 _CAPTURE_EXT = ".ngfx-capture"
+
+# Where ngfx writes captures when it ignores --output-dir (Linux 2026.1 does).
+_DEFAULT_CAPTURE_DIR = Path.home() / "Documents" / "NVIDIA Nsight Graphics" / "GraphicsCaptures"
 
 
 def _warn_unexpected_ext(out: str) -> None:
@@ -240,6 +244,11 @@ def run(args: argparse.Namespace) -> int:
         return EXIT_TOOL
 
     captured = _find_capture(session_dir, start)
+    if captured is None:
+        stray = _find_capture(_DEFAULT_CAPTURE_DIR, start)
+        if stray is not None:
+            captured = Path(shutil.move(str(stray), session_dir / stray.name))
+            sys.stderr.write(f"[nsight] moved {stray} into session dir\n")
     if captured is None:
         sys.stderr.write(
             f"[nsight] could not find written .ngfx-capture under {session_dir}\n"
